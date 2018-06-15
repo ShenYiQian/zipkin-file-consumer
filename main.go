@@ -76,7 +76,7 @@ func main() {
 		go func(sarama.PartitionConsumer) {
 			defer wg.Done()
 			for msg := range pc.Messages() {
-				fmt.Printf("Partition:%d, Offset:%d, Key:%s, Value:%s\n", msg.Partition, msg.Offset, string(msg.Key), string(msg.Value))
+				//fmt.Printf("Partition:%d, Offset:%d, Key:%s, Value:%s\n", msg.Partition, msg.Offset, string(msg.Key), string(msg.Value))
 				report, err := kafka.NewReporter([]string{*brokerList}, kafka.Topic(*zipkinTopic),
 					kafka.Producer(producer), kafka.Logger(log.New(os.Stderr, "", log.LstdFlags)))
 				if err != nil {
@@ -86,6 +86,9 @@ func main() {
 				data := ZipkinFileData{}
 				json.Unmarshal(msg.Value, &data)
 				traceId, err := model.TraceIDFromHex(data.TraceId)
+				if err != nil {
+					panic(err)
+				}
 				span := model.SpanModel{
 					Name: data.Name,
 					SpanContext: model.SpanContext{
@@ -102,7 +105,7 @@ func main() {
 					Tags:           data.Tags,
 				}
 				report.Send(span)
-				fmt.Println("report send finish")
+				//fmt.Println("report send finish")
 			}
 
 		}(pc)
